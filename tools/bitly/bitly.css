@@ -65,9 +65,12 @@ body {
   margin: 0;
 }
 
-/* Long text wraps inside the paragraph, so the info button stays on its line. */
+/* Long text wraps inside the paragraph, so the info button stays next to it. */
+.bitly .bl-row:has(> p) {
+  flex-wrap: nowrap;
+}
+
 .bitly .bl-row > p {
-  flex: 0 1 auto;
   min-width: 0;
 }
 
