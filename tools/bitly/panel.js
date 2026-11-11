@@ -305,7 +305,7 @@ export default function mountPanel(root, {
     const trigger = el('button', {
       type: 'button', slot: 'trigger', id: 'bl-download', className: 'nx-form-btn-secondary',
     }, 'Download');
-    const control = el('nx-menu', { placement: 'below-start' }, trigger);
+    const control = el('nx-menu', { placement: 'auto' }, trigger);
     control.items = [
       { id: 'svg', label: 'SVG', description: 'Scales to any size' },
       { id: 'png', label: 'PNG', description: 'At least 1024 pixels wide' },
