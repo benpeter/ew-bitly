@@ -47,13 +47,30 @@ describe('createBitly', () => {
       longUrl: 'https://h.de/x', group: 'G', domain: 'bit.ly', title: 'x',
     });
     assert.equal(link.id, 'bit.ly/new');
+    assert.equal(link.existed, false);
     const { url, opts } = fetch.calls[0];
     assert.equal(url, 'https://api-ssl.bitly.com/v4/bitlinks');
     assert.equal(opts.method, 'POST');
+    assert.deepEqual(Object.keys(opts.headers).sort(), ['Authorization', 'Content-Type']);
     assert.equal(opts.headers['Content-Type'], 'application/json');
     assert.deepEqual(JSON.parse(opts.body), {
       long_url: 'https://h.de/x', group_guid: 'G', domain: 'bit.ly', title: 'x',
     });
+  });
+
+  it('marks a link Bitly already had', async () => {
+    const fetch = fakeFetch(() => ({ status: 200, body: { id: 'bit.ly/old' } }));
+    const link = await createBitly({ token: 'T', fetch }).createLink({
+      longUrl: 'https://h.de/x', group: 'G', domain: 'bit.ly', title: 'x',
+    });
+    assert.equal(link.existed, true);
+  });
+
+  it('sends only the Bitly token', async () => {
+    const fetch = fakeFetch(() => ({ body: { links: [] } }));
+    await createBitly({ token: 'T', fetch }).listLinks({ group: 'G', hostPath: 'h' });
+    assert.deepEqual(fetch.calls[0].opts.headers, { Authorization: 'Bearer T' });
+    assert.equal(fetch.calls[0].opts.credentials, 'omit');
   });
 
   it('reads 30-day clicks', async () => {

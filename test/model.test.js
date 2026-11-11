@@ -1,98 +1,48 @@
 import { it, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  readSettings, pageUrl, withCampaign, isSamePage, campaignOf, errorMessage,
+  CAMPAIGNS, hostOrigin, pageUrl, isDraft, withCampaign, isSamePage, findExisting, campaignOf,
+  safeHref, qrFileName, mediaPath, imageHtml, linkHtml, errorMessage,
 } from '../tools/bitly/model.js';
 
-const config = (rows) => ({
-  ':names': ['data', 'bitly'],
-  ':type': 'multi-sheet',
-  data: { data: [{ key: '', value: '' }] },
-  bitly: { data: rows },
+describe('CAMPAIGNS', () => {
+  it('has the demo presets', () => {
+    assert.deepEqual(CAMPAIGNS.map((c) => c.label), ['Table card', 'Flyer', 'Instagram', 'Newsletter']);
+    assert.deepEqual(CAMPAIGNS[0], { label: 'Table card', source: 'table-card', medium: 'print' });
+  });
 });
 
-describe('readSettings', () => {
-  it('uses defaults without a bitly sheet', () => {
-    const s = readSettings({ ':names': ['data'], data: { data: [] } });
-    assert.equal(s.host, '');
-    assert.equal(s.group, '');
-    assert.equal(s.domain, 'bit.ly');
-    assert.ok(s.campaigns.length > 0);
+describe('hostOrigin', () => {
+  it('accepts a bare host or an https origin', () => {
+    assert.equal(hostOrigin('schamdan.de'), 'https://schamdan.de');
+    assert.equal(hostOrigin('https://www.schamdan.de/'), 'https://www.schamdan.de');
+    assert.equal(hostOrigin('main--site--org.aem.live'), 'https://main--site--org.aem.live');
   });
 
-  it('uses defaults for a missing or broken config', () => {
-    assert.equal(readSettings(undefined).domain, 'bit.ly');
-    assert.equal(readSettings('nope').domain, 'bit.ly');
-  });
-
-  it('reads host, group and domain, trimmed', () => {
-    const s = readSettings(config([
-      { key: 'host', value: ' schamdan.de ' },
-      { key: 'group', value: 'Bk1abc' },
-      { key: 'domain', value: 'go.example.com' },
-      { key: 'unknown', value: 'x' },
-    ]));
-    assert.equal(s.host, 'schamdan.de');
-    assert.equal(s.group, 'Bk1abc');
-    assert.equal(s.domain, 'go.example.com');
-  });
-
-  it('accepts an https origin as host', () => {
-    assert.equal(readSettings(config([{ key: 'host', value: 'https://schamdan.de/' }])).host, 'schamdan.de');
-  });
-
-  it('ignores an empty value', () => {
-    assert.equal(readSettings(config([{ key: 'domain', value: '' }])).domain, 'bit.ly');
-  });
-
-  it('parses campaigns and skips bad entries', () => {
-    const s = readSettings(config([
-      { key: 'campaigns', value: 'Table card=table-card/print | broken | Flyer=flyer/ | Instagram=instagram/social' },
-    ]));
-    assert.deepEqual(s.campaigns, [
-      { label: 'Table card', source: 'table-card', medium: 'print' },
-      { label: 'Instagram', source: 'instagram', medium: 'social' },
-    ]);
+  it('rejects anything else', () => {
+    ['', undefined, 42, 'http://schamdan.de', 'schamdan.de:8080', 'schamdan.de/menu',
+      'user@schamdan.de', 'localhost', 'main--site--org.aem.page', 'x.hlx.page', 'schamdan.de?x=1']
+      .forEach((host) => assert.equal(hostOrigin(host), null, String(host)));
   });
 });
 
 describe('pageUrl', () => {
-  const settings = readSettings(undefined);
-
-  it('uses the configured host', () => {
-    const r = pageUrl({ context: { org: 'o', repo: 's', path: '/speisekarte' }, settings: { ...settings, host: 'schamdan.de' } });
-    assert.deepEqual(r, { url: 'https://schamdan.de/speisekarte', host: 'schamdan.de', hostSource: 'config' });
-  });
-
-  it('falls back to the aem.live host', () => {
-    const r = pageUrl({ context: { org: 'benpeter', repo: 'da-schamdan', path: '/ueber-uns' }, settings });
-    assert.equal(r.url, 'https://main--da-schamdan--benpeter.aem.live/ueber-uns');
-    assert.equal(r.hostSource, 'default');
-  });
-
-  it('prefers site over repo', () => {
-    const r = pageUrl({
-      context: {
-        org: 'o', site: 'a', repo: 'b', path: '/x',
-      },
-      settings,
-    });
-    assert.equal(r.host, 'main--a--o.aem.live');
-  });
-
-  it('maps .html and index paths', () => {
-    const url = (path) => pageUrl({ context: { org: 'o', repo: 's', path }, settings: { ...settings, host: 'h.de' } }).url;
+  it('maps editor paths to production URLs', () => {
+    const url = (path) => pageUrl('https://h.de', path);
+    assert.equal(url('/speisekarte'), 'https://h.de/speisekarte');
     assert.equal(url('/speisekarte.html'), 'https://h.de/speisekarte');
     assert.equal(url('/index'), 'https://h.de/');
-    assert.equal(url('/index.html'), 'https://h.de/');
     assert.equal(url('/en/index'), 'https://h.de/en/');
     assert.equal(url('/'), 'https://h.de/');
-    assert.equal(url(''), 'https://h.de/');
     assert.equal(url('drafts/benp/test'), 'https://h.de/drafts/benp/test');
   });
+});
 
-  it('returns null without org and site', () => {
-    assert.equal(pageUrl({ context: {}, settings }), null);
+describe('isDraft', () => {
+  it('flags paths under /drafts/', () => {
+    assert.equal(isDraft('/drafts/benp/test'), true);
+    assert.equal(isDraft('/speisekarte'), false);
+    assert.equal(isDraft('/news/drafts'), false);
   });
 });
 
@@ -118,34 +68,83 @@ describe('withCampaign', () => {
 describe('isSamePage', () => {
   const page = 'https://schamdan.de/speisekarte';
 
-  it('matches with query, hash and trailing slash', () => {
+  it('ignores query, hash, scheme and host case', () => {
     assert.equal(isSamePage('https://schamdan.de/speisekarte?utm_source=x#top', page), true);
-    assert.equal(isSamePage('https://SCHAMDAN.de/speisekarte/', page), true);
-    assert.equal(isSamePage('http://schamdan.de/speisekarte', page), true);
+    assert.equal(isSamePage('http://SCHAMDAN.de/speisekarte', page), true);
   });
 
-  it('rejects other pages and hosts', () => {
+  it('rejects other pages, a trailing slash and other hosts', () => {
+    assert.equal(isSamePage('https://schamdan.de/speisekarte/', page), false);
     assert.equal(isSamePage('https://schamdan.de/speisekarte/getraenke', page), false);
     assert.equal(isSamePage('https://www.schamdan.de/speisekarte', page), false);
     assert.equal(isSamePage('not a url', page), false);
   });
 
-  it('matches the root', () => {
+  it('matches the root with or without a slash', () => {
     assert.equal(isSamePage('https://schamdan.de', 'https://schamdan.de/'), true);
   });
 });
 
-describe('campaignOf', () => {
-  const campaigns = [{ label: 'Flyer', source: 'flyer', medium: 'print' }];
+describe('findExisting', () => {
+  const links = [
+    { id: 'bit.ly/a', long_url: 'https://h.de/menu?utm_source=flyer&utm_medium=print' },
+    { id: 'bit.ly/b', long_url: 'https://h.de/menu' },
+  ];
 
-  it('names a known campaign', () => {
-    assert.equal(campaignOf('https://h.de/?utm_source=flyer&utm_medium=print', campaigns), 'Flyer');
+  it('finds a link with the exact same long URL', () => {
+    assert.equal(findExisting(links, 'https://h.de/menu').id, 'bit.ly/b');
+    assert.equal(findExisting(links, 'https://h.de/menu?utm_source=flyer&utm_medium=print').id, 'bit.ly/a');
   });
 
-  it('falls back to utm_source, then empty', () => {
-    assert.equal(campaignOf('https://h.de/?utm_source=radio', campaigns), 'radio');
-    assert.equal(campaignOf('https://h.de/', campaigns), '');
-    assert.equal(campaignOf('nope', campaigns), '');
+  it('returns undefined otherwise', () => {
+    assert.equal(findExisting(links, 'https://h.de/menu?utm_source=qr&utm_medium=print'), undefined);
+  });
+});
+
+describe('campaignOf', () => {
+  it('names a known campaign, else utm_source, else empty', () => {
+    assert.equal(campaignOf('https://h.de/?utm_source=flyer&utm_medium=print'), 'Flyer');
+    assert.equal(campaignOf('https://h.de/?utm_source=radio'), 'radio');
+    assert.equal(campaignOf('https://h.de/'), '');
+    assert.equal(campaignOf('nope'), '');
+  });
+});
+
+describe('safeHref', () => {
+  it('allows https links only', () => {
+    assert.equal(safeHref('https://bit.ly/abc'), 'https://bit.ly/abc');
+    // eslint-disable-next-line no-script-url
+    assert.equal(safeHref('javascript:alert(1)'), null);
+    assert.equal(safeHref('http://bit.ly/abc'), null);
+    assert.equal(safeHref(undefined), null);
+  });
+});
+
+describe('qrFileName', () => {
+  it('is unique per link and uses safe characters', () => {
+    assert.equal(qrFileName('https://bit.ly/3XyZabc'), 'qr-bit-ly-3XyZabc.png');
+    assert.notEqual(qrFileName('https://bit.ly/3XyZabc'), qrFileName('https://bit.ly/3XyZabd'));
+    assert.match(qrFileName('https://go.example.com/a/b?c'), /^qr-[A-Za-z0-9-]+\.png$/);
+  });
+});
+
+describe('mediaPath', () => {
+  it('puts media next to the page like the editor does', () => {
+    assert.equal(mediaPath('/speisekarte', 'qr.png'), '/.speisekarte/qr.png');
+    assert.equal(mediaPath('/drafts/benp/test', 'qr.png'), '/drafts/benp/.test/qr.png');
+    assert.equal(mediaPath('/drafts/benp/test.html', 'qr.png'), '/drafts/benp/.test/qr.png');
+    assert.equal(mediaPath('/', 'qr.png'), '/.index/qr.png');
+    assert.equal(mediaPath('/en/', 'qr.png'), '/en/.index/qr.png');
+  });
+});
+
+describe('imageHtml and linkHtml', () => {
+  it('builds escaped markup', () => {
+    assert.equal(
+      imageHtml({ src: 'https://content.da.live/o/s/.p/qr.png', alt: 'QR code: "Menü" <b>' }),
+      '<p><img src="https://content.da.live/o/s/.p/qr.png" alt="QR code: &quot;Menü&quot; &lt;b&gt;"></p>',
+    );
+    assert.equal(linkHtml('https://bit.ly/abc'), '<p><a href="https://bit.ly/abc">bit.ly/abc</a></p>');
   });
 });
 
@@ -155,6 +154,7 @@ describe('errorMessage', () => {
     assert.match(errorMessage({ status: 401 }), /token/);
     assert.match(errorMessage({ status: 403, body: { message: 'FORBIDDEN' } }), /token/);
     assert.match(errorMessage({ status: 429, body: { message: 'MONTHLY_LIMIT_EXCEEDED' } }), /monthly limit/);
+    assert.match(errorMessage({ status: 429, body: { message: 'API_USAGE_LIMIT_EXCEEDED' } }), /monthly limit/);
     assert.match(errorMessage({ status: 429, body: { message: 'RATE_LIMIT_EXCEEDED' } }), /Wait a minute/);
     assert.match(errorMessage({ status: 400, body: { message: 'INVALID_ARG_LONG_URL' } }), /page URL/);
   });
