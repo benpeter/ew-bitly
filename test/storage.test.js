@@ -1,6 +1,6 @@
 import { it, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTokenStore } from '../tools/bitly/storage.js';
+import createTokenStore from '../tools/bitly/storage.js';
 
 function fakeStorage() {
   const map = new Map();

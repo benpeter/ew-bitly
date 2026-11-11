@@ -66,11 +66,11 @@ describe('createBitly', () => {
   });
 
   it('returns null clicks when the plan has no numbers', async () => {
-    for (const status of [402, 403]) {
+    const results = await Promise.all([402, 403].map((status) => {
       const fetch = fakeFetch(() => ({ status, body: { message: 'UPGRADE_REQUIRED' } }));
-      // eslint-disable-next-line no-await-in-loop
-      assert.equal(await createBitly({ token: 'T', fetch }).clicks('bit.ly/a'), null);
-    }
+      return createBitly({ token: 'T', fetch }).clicks('bit.ly/a');
+    }));
+    assert.deepEqual(results, [null, null]);
   });
 
   it('reads clicks for many links, at most 3 at a time', async () => {

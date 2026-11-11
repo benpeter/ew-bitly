@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "description": "Bitly short links and QR codes for Adobe Experience Workspace",
   "license": "Apache-2.0",
+  "type": "module",
   "scripts": {
     "test": "node --test \"test/**/*.test.js\"",
     "lint:js": "eslint .",
