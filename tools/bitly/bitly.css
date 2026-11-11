@@ -65,6 +65,12 @@ body {
   margin: 0;
 }
 
+/* Long text wraps inside the paragraph, so the info button stays on its line. */
+.bitly .bl-row > p {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
 .bitly .nx-form-field {
   margin: 0 0 8px;
 }
