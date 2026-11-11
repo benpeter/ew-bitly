@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Bitly panel fixture (fake SDK and fake Bitly)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://da.live/nx2/styles/styles.css">
+    <link rel="stylesheet" href="https://da.live/nx2/styles/buttons.css">
+    <link rel="stylesheet" href="/tools/bitly/bitly.css">
+    <style>#log { font: 12px monospace; white-space: pre-wrap; border-top: 2px dashed #999; padding: 8px; }</style>
+  </head>
+  <body>
+    <div id="mount"></div>
+    <div id="log"></div>
+    <script type="module">
+      import mountPanel from '/tools/bitly/panel.js';
+
+      // Fake host and fake Bitly. This page never talks to Bitly or Workspace.
+      const params = new URLSearchParams(location.search);
+      const log = (line) => { document.getElementById('log').textContent += `${line}\n`; window.fixtureLog = (window.fixtureLog || []).concat(line); };
+      const links = [
+        { id: 'bit.ly/aaa', link: 'https://bit.ly/aaa', long_url: 'https://schamdan.de/speisekarte?utm_source=table-card&utm_medium=print', created_at: '2026-11-10T10:00:00+0000' },
+        { id: 'bit.ly/bbb', link: 'https://bit.ly/bbb', long_url: 'https://schamdan.de/speisekarte', created_at: '2026-11-09T10:00:00+0000' },
+        { id: 'bit.ly/ccc', link: 'https://bit.ly/ccc', long_url: 'https://schamdan.de/speisekarte/getraenke', created_at: '2026-11-08T10:00:00+0000' },
+      ];
+      const json = (status, body) => new Response(JSON.stringify(body), { status });
+      const fetch = async (url, opts = {}) => {
+        log(`bitly ${opts.method || 'GET'} ${url}`);
+        const u = new URL(url);
+        if (params.get('bitly') === 'monthly') return json(429, { message: 'API_USAGE_LIMIT_EXCEEDED' });
+        if (u.pathname === '/v4/user') return json(200, { default_group_guid: 'G1' });
+        if (u.pathname.endsWith('/bitlinks') && opts.method === 'POST') {
+          const body = JSON.parse(opts.body);
+          const link = { id: 'bit.ly/new1', link: 'https://bit.ly/new1', long_url: body.long_url, created_at: new Date().toISOString() };
+          links.unshift(link);
+          return json(201, link);
+        }
+        if (u.pathname.endsWith('/bitlinks')) return json(200, { links });
+        if (u.pathname.endsWith('/clicks/summary')) return json(200, { total_clicks: u.pathname.includes('aaa') ? 12 : 1 });
+        return json(404, { message: 'NOT_FOUND' });
+      };
+      const site = {
+        host: async () => {
+          if (params.get('host') === 'fail') throw new Error('down');
+          return params.has('host') ? params.get('host') : 'schamdan.de';
+        },
+        upload: async (path) => { log(`upload ${path}`); return `https://content.da.live/benpeter/da-schamdan${path}`; },
+      };
+      const actions = {
+        sendHTML: (html) => log(`sendHTML ${html}`),
+        makeDraggable: async ({ element }) => { log(`makeDraggable ${element.className}`); return () => log('dispose drag'); },
+      };
+      const storage = window.sessionStorage;
+      if (params.get('token') === 'none') storage.removeItem('ew-bitly:token');
+      else storage.setItem('ew-bitly:token', 'fake-token');
+      window.teardown = mountPanel(document.getElementById('mount'), {
+        context: { org: 'benpeter', repo: 'da-schamdan', path: params.get('path') || '/speisekarte' },
+        actions,
+        capabilities: { dragDrop: 1 },
+        storage,
+        fetch,
+        site,
+      });
+    </script>
+  </body>
+</html>
