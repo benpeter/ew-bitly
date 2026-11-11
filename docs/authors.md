@@ -1,8 +1,8 @@
 # Short links: author guide
 
 The Short links panel makes short links and QR codes for the page you are editing.
-Use them for print and social: a QR code on a table card, a flyer or a poster, a
-short link in an Instagram bio or a newsletter. Each link can carry a campaign, so
+Use them where people scan or type a link: a QR code on a table card, a flyer or a
+poster, a short link in an Instagram bio or a newsletter. Each link can carry a campaign, so
 your analytics can tell the table card from the flyer.
 
 The links come from your own [Bitly](https://bitly.com) account. Use a paid Bitly
@@ -31,7 +31,7 @@ The token stays in this browser. On another computer or browser, connect again.
 ## Make a short link
 
 1. Pick a **Campaign**, or leave **No campaign**.
-   - Table card and Flyer are for print, Instagram for social, Newsletter for email.
+   - Each campaign adds its own `utm_source` and `utm_medium` to the link.
 2. Choose **Create short link**.
 
 The new link shows under **Short links for this page** with its campaign. Clicks of
@@ -58,14 +58,14 @@ Then:
   the image as a link. Switch the editor to **Content** (the Layout/Content switch
   above the page) first.
 - **Drag** the QR code into the page, if your Workspace supports it.
-- **Download SVG** for print, or **Download PNG**.
+- **Download** saves the code as SVG (sharp at any size) or PNG.
 
 After inserting, add alt text to the image in the editor.
 
 ## Things to know
 
-- The code opens the published page. Publish the page before you print the code.
-- Pages under `/drafts/` aren't public. The panel shows a warning, because a printed
+- The code opens the published page. Publish the page before you share the code.
+- Pages under `/drafts/` aren't public. The panel shows a warning, because a shared
   code would open an error page.
 
   ![A QR code in a draft page. The panel warns that drafts aren't public.](img/draft-and-insert.png)

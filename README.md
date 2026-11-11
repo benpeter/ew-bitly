@@ -94,7 +94,7 @@ The token is stored per web address, so authors paste it again after the switch.
 - Insert at cursor is tested in the editor's Content view, not in Layout.
 - Pages under `/drafts/` aren't public. The panel shows a warning on these pages but
   still makes links.
-- Authors should publish the page before they print a code.
+- Authors should publish the page before they share a code.
 - The QR image has no alt text. Authors add it in the editor after they insert it.
 - Click counts show for the 10 newest links of a page.
 - The campaigns are fixed:
