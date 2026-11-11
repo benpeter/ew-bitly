@@ -10,6 +10,18 @@ import {
 
 const GROUP_KEY = 'ew-bitly:group';
 const TOKEN_HELP = 'https://app.bitly.com/settings/api/';
+const ICONS = new URL('./img/', import.meta.url).href;
+const SVG = 'http://www.w3.org/2000/svg';
+
+function icon(name) {
+  const svg = document.createElementNS(SVG, 'svg');
+  svg.setAttribute('viewBox', '0 0 20 20');
+  svg.setAttribute('aria-hidden', 'true');
+  const use = document.createElementNS(SVG, 'use');
+  use.setAttribute('href', `${ICONS}${name}.svg#icon`);
+  svg.append(use);
+  return svg;
+}
 
 function el(tag, props = {}, ...children) {
   const node = document.createElement(tag);
@@ -35,6 +47,7 @@ function download(blob, name) {
 
 export default function mountPanel(root, {
   context, actions, capabilities = {}, storage, fetch, site: siteOverride, qr: qrOverride,
+  showToast,
 }) {
   const tokens = createTokenStore(storage);
   const groups = createTokenStore(storage, GROUP_KEY);
@@ -62,8 +75,58 @@ export default function mountPanel(root, {
 
   const status = el('p', { className: 'bl-status', role: 'status' });
   const main = el('div');
-  root.replaceChildren(el('div', { className: 'bitly' }, main, status));
-  const say = (text) => { status.textContent = text; };
+  root.replaceChildren(el('main', { className: 'bitly' }, main, status));
+  // Problems and progress stay in the panel; confirmations go to DA's toast when it loaded.
+  const say = (text, busy = false) => {
+    status.replaceChildren(...(busy ? [el('span', { className: 'nx-loading-spinner', 'aria-hidden': 'true' })] : []), text);
+  };
+  const notify = (text) => {
+    if (typeof showToast !== 'function') {
+      say(text);
+      return;
+    }
+    say('');
+    showToast({ text });
+  };
+
+  // DA's shared components may not have loaded. Then help shows inline and the token
+  // menu is a plain button.
+  const hasPopover = !!customElements.get('nx-popover');
+  const hasMenu = !!customElements.get('nx-menu');
+  let helpCount = 0;
+
+  // Explanations sit behind an info button that opens a text-only nx-popover (EW Style Guide).
+  function help(topic, row, ...texts) {
+    if (!hasPopover) {
+      row.append(...texts.map((text) => el('p', { className: 'bl-inline-help' }, text)));
+      return row;
+    }
+    helpCount += 1;
+    const id = `bl-help-${helpCount}`;
+    const trigger = el('button', {
+      type: 'button',
+      id: `${id}-button`,
+      className: 'nx-action-btn-icon nx-btn-sm bl-help',
+      'aria-label': `About ${topic}`,
+      'aria-expanded': 'false',
+      'aria-controls': id,
+    }, icon('s2-icon-infocircle-20-n'));
+    const popover = el('nx-popover', { id, className: 'bl-help-popover' }, ...texts.map((text) => el('p', {}, text)));
+    popover.scoped = true;
+    trigger.addEventListener('click', () => {
+      if (typeof popover.show !== 'function') return;
+      if (popover.open) {
+        popover.close();
+        return;
+      }
+      popover.show({ anchor: row, placement: 'auto' });
+      trigger.setAttribute('aria-expanded', 'true');
+    });
+    popover.addEventListener('close', () => trigger.setAttribute('aria-expanded', 'false'));
+    row.append(trigger, popover);
+    return row;
+  }
+  const row = (...children) => el('div', { className: 'bl-row' }, ...children);
 
   const stopDrag = () => {
     drag.dispose?.();
@@ -128,11 +191,11 @@ export default function mountPanel(root, {
     if (state.inserting || !sel?.prepared) return;
     state.inserting = true;
     render();
-    say('Uploading the QR code…');
+    say('Uploading the QR code…', true);
     try {
       const src = await site.upload(mediaPath(path, sel.prepared.file.name), sel.prepared.file);
       actions.sendHTML(imageHtml(src) + (sel.withLink ? linkHtml(sel.link) : ''));
-      say('Sent to the page at the cursor.');
+      notify('Sent to the page at the cursor.');
     } catch {
       say("Couldn't upload the QR code. Try again, or drag it into the page.");
     }
@@ -145,7 +208,7 @@ export default function mountPanel(root, {
     const longUrl = withCampaign(state.url, campaign);
     const known = findExisting(state.links, longUrl);
     if (known) {
-      say('You already have this link.');
+      notify('You already have this link.');
       if (state.selected?.id !== known.id) select(known);
       return;
     }
@@ -161,7 +224,7 @@ export default function mountPanel(root, {
       if (!state.links.some((l) => l.id === link.id)) {
         state.links.unshift({ ...link, long_url: longUrl });
       }
-      say(link.existed ? 'You already had this link.' : 'Short link created.');
+      notify(link.existed ? 'You already had this link.' : 'Short link created.');
       state.creating = false;
       select(link);
     } catch (e) {
@@ -189,7 +252,7 @@ export default function mountPanel(root, {
         element: keepPointerCapture(handle),
         getData: () => ({ files: [prepared.file] }),
         onResult: ({ ok, error }) => {
-          if (ok) say('Added to the page.');
+          if (ok) notify('Added to the page.');
           else if (error !== 'cancelled') say("Couldn't add the QR code to the page.");
         },
       }).then((dispose) => {
@@ -201,22 +264,20 @@ export default function mountPanel(root, {
       'div',
       { className: 'bl-qr' },
       handle,
-      el(
-        'div',
-        { className: 'bl-check' },
-        el('input', {
-          type: 'checkbox', id: 'bl-with-link', checked: sel.withLink, onchange: (e) => { sel.withLink = e.target.checked; },
-        }),
-        el('label', { htmlFor: 'bl-with-link' }, 'Add the link below the image'),
+      el('label', { className: 'nx-checkbox bl-check' }, el('input', {
+        type: 'checkbox', id: 'bl-with-link', checked: sel.withLink, onchange: (e) => { sel.withLink = e.target.checked; },
+      }), 'Add the link below the image'),
+      help(
+        'adding the QR code',
+        row(
+          button(state.inserting ? 'Inserting…' : 'Insert at cursor', insert, undefined, { id: 'bl-insert', disabled: state.inserting }),
+          button('Download SVG', () => download(new Blob([prepared.svg], { type: 'image/svg+xml' }), prepared.file.name.replace(/\.png$/, '.svg')), 'nx-action-btn-quiet nx-btn-sm', { id: 'bl-svg' }),
+          button('Download PNG', () => download(prepared.png, prepared.file.name), 'nx-action-btn-quiet nx-btn-sm', { id: 'bl-png' }),
+        ),
+        `Insert at cursor works in the document view.${canDrag ? ' You can also drag the code into the page.' : ''}`,
+        'The image has no alt text. Add it in the editor, the way your site handles alt text.',
+        'The code opens the published page. Publish the page before you print it. SVG is best for print.',
       ),
-      el(
-        'div',
-        { className: 'bl-actions' },
-        button(state.inserting ? 'Inserting…' : 'Insert at cursor', insert, 'nx-btn-primary nx-btn-sm', { id: 'bl-insert', disabled: state.inserting }),
-        button('Download SVG', () => download(new Blob([prepared.svg], { type: 'image/svg+xml' }), prepared.file.name.replace(/\.png$/, '.svg')), undefined, { id: 'bl-svg' }),
-        button('Download PNG', () => download(prepared.png, prepared.file.name), undefined, { id: 'bl-png' }),
-      ),
-      el('p', { className: 'bl-hint' }, `Use the document view.${canDrag ? ' You can also drag the code into the page.' : ''} Publish the page before you print.`),
     );
   }
 
@@ -239,18 +300,18 @@ export default function mountPanel(root, {
       href && el(
         'div',
         { className: 'bl-link-actions' },
-        button('Copy link', () => navigator.clipboard.writeText(href).then(() => say('Copied the link.'), () => say("Couldn't copy.")), undefined, { 'aria-label': `Copy ${name}` }),
+        button('Copy link', () => navigator.clipboard.writeText(href).then(() => notify('Copied the link.'), () => say("Couldn't copy.")), undefined, { 'aria-label': `Copy ${name}` }),
         button(isOpen ? 'Hide QR code' : 'QR code', () => select(link), undefined, {
           id: `bl-qr-${link.id}`, 'aria-label': `QR code for ${name}`, 'aria-expanded': String(isOpen),
         }),
       ),
-      isOpen && (state.selected.prepared ? qrView() : el('p', { className: 'bl-hint' }, 'Making the QR code…')),
+      isOpen && (state.selected.prepared ? qrView() : el('p', { className: 'bl-status' }, el('span', { className: 'nx-loading-spinner', 'aria-hidden': 'true' }), 'Making the QR code…')),
     );
   }
 
   function tokenCard() {
     const input = el('input', {
-      type: 'password', id: 'bl-token', autocomplete: 'off', spellcheck: 'false',
+      type: 'password', id: 'bl-token', className: 'nx-input', autocomplete: 'off', spellcheck: 'false',
     });
     const save = () => {
       if (!input.value.trim()) return;
@@ -261,13 +322,19 @@ export default function mountPanel(root, {
     return el(
       'section',
       { className: 'bl-setup' },
-      el('h2', {}, 'Connect your Bitly account'),
-      el('p', {}, 'Paste your Bitly API token. Create one in Bitly under ', el('a', { href: TOKEN_HELP, target: '_blank', rel: 'noopener noreferrer' }, 'Settings, API'), '.'),
-      el('div', { className: 'bl-field' }, el('label', { htmlFor: 'bl-token' }, 'API token'), input),
-      button('Save', save, 'nx-btn-primary nx-btn-sm', { id: 'bl-save' }),
-      el('p', { className: 'bl-hint' }, tokens.persistent
-        ? 'The token stays in this browser, for this panel only.'
-        : "This browser blocks storage, so you'll paste the token again next time."),
+      help(
+        'the Bitly token',
+        row(el('h2', {}, 'Connect Bitly')),
+        'Each author uses their own Bitly account. Create an API token in Bitly under Settings, API.',
+        tokens.persistent
+          ? 'The token stays in this browser, for this panel only. It goes to Bitly and nowhere else.'
+          : "This browser blocks storage, so you'll paste the token again next time.",
+      ),
+      el('label', { className: 'nx-form-field' }, 'Bitly API token', input),
+      row(
+        button('Connect', save, 'nx-btn-primary nx-btn-sm', { id: 'bl-save' }),
+        el('a', { href: TOKEN_HELP, target: '_blank', rel: 'noopener noreferrer' }, 'Get a token'),
+      ),
     );
   }
 
@@ -277,12 +344,46 @@ export default function mountPanel(root, {
     if (document.activeElement?.id) lastFocus = document.activeElement.id;
     const active = document.activeElement;
     const focused = root.contains(active) || active === document.body ? lastFocus : null;
+    const removeToken = () => {
+      tokens.clear();
+      groups.clear();
+      stopDrag();
+      run += 1;
+      state.links = [];
+      state.selected = null;
+      say('');
+      render();
+    };
+    // Removing the token is rare, so it sits in a menu, not next to the daily actions.
+    let tokenControl = null;
+    if (tokens.get()) {
+      const trigger = el('button', {
+        type: 'button', slot: 'trigger', id: 'bl-options', className: 'nx-action-btn-icon nx-btn-sm', 'aria-label': 'Bitly account options',
+      }, icon('s2-icon-more-20-n'));
+      if (hasMenu) {
+        tokenControl = el('nx-menu', { placement: 'below-end' }, trigger);
+        tokenControl.items = [{ id: 'remove', label: 'Remove Bitly token', description: 'Only from this browser. Your links stay in Bitly.' }];
+        tokenControl.addEventListener('select', (e) => { if (e.detail?.id === 'remove') removeToken(); });
+      } else {
+        tokenControl = button('Remove Bitly token', removeToken, 'nx-action-btn-quiet nx-btn-sm', { id: 'bl-remove' });
+      }
+    }
     const header = el(
       'section',
       { className: 'bl-page' },
-      state.url && el('p', {}, 'Links open ', el('strong', {}, bare(state.url))),
+      el('div', { className: 'bl-title' }, el('h1', {}, 'bit.ly'), tokenControl),
+      state.url && help(
+        'these links',
+        row(el('p', {}, 'Links open ', el('strong', {}, bare(state.url)))),
+        "Short links point to this page on the site's published domain. A campaign adds utm_source and utm_medium, so your analytics can tell a table card from a flyer.",
+        'Links and scans go through bit.ly, under your Bitly account.',
+      ),
       state.problem && el('p', { className: 'bl-warn' }, state.problem, ' ', button('Retry', start, 'nx-action-btn-quiet nx-btn-sm')),
-      state.url && isDraft(path) && el('p', { className: 'bl-warn' }, "Draft pages aren't public. A printed code would open an error page."),
+      state.url && isDraft(path) && help(
+        'draft pages',
+        row(el('p', { className: 'bl-warn' }, 'This is a draft page.')),
+        "Draft pages aren't public. A printed code for this page would open an error page.",
+      ),
     );
     if (path === '/') {
       main.replaceChildren(el('p', {}, 'Open a page to make short links for it.'));
@@ -292,14 +393,15 @@ export default function mountPanel(root, {
       main.replaceChildren(header, tokenCard());
       return;
     }
+    // A native select, styled as DA's input: nx-picker can't take a field label yet.
     const campaign = el(
       'select',
-      { id: 'bl-campaign', onchange: (e) => { state.campaign = e.target.value; } },
+      { id: 'bl-campaign', className: 'nx-input', onchange: (e) => { state.campaign = e.target.value; } },
       el('option', { value: '' }, 'No campaign'),
       CAMPAIGNS.map((c, i) => el('option', { value: String(i) }, c.label)),
     );
     campaign.value = state.campaign;
-    let list = el('p', { className: 'bl-hint' }, state.url ? 'No short links for this page yet.' : '');
+    let list = state.url ? el('p', { className: 'bl-empty' }, 'No short links for this page yet.') : null;
     if (state.listFailed) list = el('p', { className: 'bl-warn' }, "Couldn't load your links. ", button('Retry', start, 'nx-action-btn-quiet nx-btn-sm'));
     else if (state.links.length) list = el('ul', { className: 'bl-links' }, state.links.map(linkRow));
     main.replaceChildren(
@@ -307,30 +409,27 @@ export default function mountPanel(root, {
       el(
         'section',
         {},
-        el('h2', {}, 'New short link'),
-        el('div', { className: 'bl-field' }, el('label', { htmlFor: 'bl-campaign' }, 'Campaign'), campaign),
+        help(
+          'new short links',
+          row(el('h2', {}, 'New short link')),
+          'If this page already has a link for the campaign, you get that link instead of a new one.',
+          'Each new link counts toward your Bitly plan\'s monthly links.',
+        ),
+        el('label', { className: 'nx-form-field' }, 'Campaign', campaign),
         button(state.creating ? 'Creating…' : 'Create short link', create, 'nx-btn-primary nx-btn-sm', {
           id: 'bl-create', disabled: !state.url || state.listFailed || state.creating,
         }),
       ),
-      el('section', {}, el('h2', {}, 'Your short links for this page'), list),
       el(
-        'details',
-        { className: 'bl-settings' },
-        el('summary', {}, 'Settings'),
-        el('p', {}, tokens.persistent ? 'Your Bitly token is saved in this browser.' : 'Your Bitly token is kept until you close this panel.'),
-        button('Remove token', () => {
-          tokens.clear();
-          groups.clear();
-          stopDrag();
-          run += 1;
-          state.links = [];
-          state.selected = null;
-          say('');
-          render();
-        }, 'nx-action-btn-quiet nx-btn-sm', { id: 'bl-remove' }),
+        'section',
+        {},
+        help(
+          'click counts',
+          row(el('h2', {}, 'Short links for this page')),
+          'Clicks are what Bitly counted in the last 30 days. QR code scans count as clicks.',
+        ),
+        list,
       ),
-      el('p', { className: 'bl-hint' }, 'Uses Bitly. Short links and scans go through bit.ly.'),
     );
     if (focused) document.getElementById(focused)?.focus();
   }
@@ -341,7 +440,7 @@ export default function mountPanel(root, {
     stopDrag();
     state.problem = null;
     state.selected = null;
-    say('Loading…');
+    say('Loading…', true);
     render();
     bitly = tokens.get() ? createBitly({ token: tokens.get(), fetch }) : null;
     try {

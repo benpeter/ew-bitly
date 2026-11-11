@@ -4,8 +4,13 @@
     <meta charset="utf-8">
     <title>Bitly panel fixture (fake SDK and fake Bitly)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="importmap">
+      { "imports": { "da-lit": "https://da.live/nx2/deps/lit/dist/index.js" } }
+    </script>
     <link rel="stylesheet" href="https://da.live/nx2/styles/styles.css">
     <link rel="stylesheet" href="https://da.live/nx2/styles/buttons.css">
+    <link rel="stylesheet" href="https://da.live/nx2/styles/form.css">
+    <link rel="stylesheet" href="https://da.live/nx2/styles/spinner.css">
     <link rel="stylesheet" href="/tools/bitly/bitly.css">
     <style>#log { font: 12px monospace; white-space: pre-wrap; border-top: 2px dashed #999; padding: 8px; }</style>
   </head>
@@ -14,6 +19,7 @@
     <div id="log"></div>
     <script type="module">
       import mountPanel from '/tools/bitly/panel.js';
+      import loadSharedUi from '/tools/bitly/shared-ui.js';
 
       // Fake host and fake Bitly. This page never talks to Bitly or Workspace.
       const params = new URLSearchParams(location.search);
@@ -53,7 +59,10 @@
       const storage = window.sessionStorage;
       if (params.get('token') === 'none') storage.removeItem('ew-bitly:token');
       else storage.setItem('ew-bitly:token', 'fake-token');
+      // ?ui=none mounts without DA's shared menu, popover and toast.
+      const ui = params.get('ui') === 'none' ? {} : await loadSharedUi().catch(() => ({}));
       window.teardown = mountPanel(document.getElementById('mount'), {
+        showToast: ui.showToast,
         context: { org: 'benpeter', repo: 'da-schamdan', path: params.get('path') || '/speisekarte' },
         actions,
         capabilities: { dragDrop: 1 },
