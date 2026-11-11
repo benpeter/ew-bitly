@@ -394,7 +394,7 @@ export default function mountPanel(root, {
     const header = el(
       'section',
       { className: 'bl-page' },
-      el('div', { className: 'bl-title' }, el('h1', {}, 'bit.ly'), tokenControl),
+      el('div', { className: 'bl-title' }, el('h1', {}, 'Short links'), tokenControl),
       state.url && help(
         'these links',
         row(el('p', {}, 'Links open ', el('strong', {}, bare(state.url)))),
