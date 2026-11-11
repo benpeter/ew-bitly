@@ -287,7 +287,7 @@ export default function mountPanel(root, {
           button('Download SVG', () => download(new Blob([prepared.svg], { type: 'image/svg+xml' }), prepared.file.name.replace(/\.png$/, '.svg')), QUIET, { id: 'bl-svg' }),
           button('Download PNG', () => download(prepared.png, prepared.file.name), QUIET, { id: 'bl-png' }),
         ),
-        `Insert at cursor works in the document view.${canDrag ? ' You can also drag the code into the page.' : ''}`,
+        `Insert at cursor works in the Content view of the editor.${canDrag ? ' You can also drag the code into the page.' : ''}`,
         'The code opens the published page. Publish the page before you print it. SVG is best for print.',
       ),
     );
@@ -340,7 +340,7 @@ export default function mountPanel(root, {
         'the Bitly token',
         row(el('h2', {}, 'Connect Bitly')),
         'Each author uses their own Bitly account and API token.',
-        'The token stays in this browser, for this panel only. It goes to Bitly and nowhere else.',
+        'The token stays in this browser. It goes to Bitly and nowhere else.',
       ),
       el('label', { className: 'nx-form-field' }, 'Bitly API token', input),
       !tokens.persistent && el('p', { className: 'bl-note' }, "This browser blocks storage, so you'll paste the token again next time."),

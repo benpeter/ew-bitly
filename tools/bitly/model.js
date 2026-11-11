@@ -85,7 +85,7 @@ export function errorMessage({ status, body }) {
   const message = body?.message || '';
   if (status === 0) return "Bitly didn't answer. Check your connection and try again.";
   if (status === 401 || status === 403) {
-    return "Bitly didn't accept your token. Remove it under Settings and paste a new one.";
+    return "Bitly didn't accept your token. Choose ⋯ > Remove Bitly token, then connect again.";
   }
   if (status === 429 && /MONTHLY_LIMIT|API_USAGE_LIMIT/.test(message)) {
     return "Your Bitly plan's monthly limit is used up. It resets on the 1st.";
