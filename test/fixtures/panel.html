@@ -44,7 +44,7 @@
           if (params.get('host') === 'fail') throw new Error('down');
           return params.has('host') ? params.get('host') : 'schamdan.de';
         },
-        upload: async (path) => { log(`upload ${path}`); return `https://content.da.live/benpeter/da-schamdan${path}`; },
+        upload: async (path) => { log(`upload ${path}`); await new Promise((r) => { setTimeout(r, 300); }); return `https://content.da.live/benpeter/da-schamdan${path}`; },
       };
       const actions = {
         sendHTML: (html) => log(`sendHTML ${html}`),

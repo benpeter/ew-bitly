@@ -17,6 +17,7 @@ export function createBitly({
     const headers = { Authorization: `Bearer ${token}` };
     if (body) headers['Content-Type'] = 'application/json';
     let resp;
+    let text;
     try {
       resp = await fetch(`${BASE}${path}`, {
         method,
@@ -25,6 +26,7 @@ export function createBitly({
         credentials: 'omit',
         signal: controller.signal,
       });
+      text = await resp.text();
     } catch {
       throw new BitlyError(0, null);
     } finally {
@@ -32,7 +34,7 @@ export function createBitly({
     }
     let json = null;
     try {
-      json = JSON.parse(await resp.text());
+      json = JSON.parse(text);
     } catch {
       // keep null
     }
@@ -40,15 +42,8 @@ export function createBitly({
     return { ...json, status: resp.status };
   }
 
-  async function clicks(id) {
-    try {
-      const json = await call(`/bitlinks/${id}/clicks/summary?unit=day&units=30`);
-      return json.total_clicks ?? null;
-    } catch (e) {
-      if (e.status === 402 || e.status === 403) return null;
-      throw e;
-    }
-  }
+  const clicks = (id) => call(`/bitlinks/${id}/clicks/summary?unit=day&units=30`)
+    .then((json) => json.total_clicks ?? null, () => null);
 
   return {
     defaultGroup: async () => (await call('/user')).default_group_guid,

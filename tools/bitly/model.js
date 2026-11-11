@@ -74,14 +74,18 @@ const escape = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/
 
 export const imageHtml = ({ src, alt }) => `<p><img src="${escape(src)}" alt="${escape(alt)}"></p>`;
 
+export const bare = (url) => url.replace(/^https:\/\//, '');
+
 export function linkHtml(link) {
-  return `<p><a href="${escape(link)}">${escape(link.replace(/^https:\/\//, ''))}</a></p>`;
+  return `<p><a href="${escape(link)}">${escape(bare(link))}</a></p>`;
 }
 
 export function errorMessage({ status, body }) {
   const message = body?.message || '';
   if (status === 0) return "Bitly didn't answer. Check your connection and try again.";
-  if (status === 401 || status === 403) return "Bitly didn't accept your token. Paste a new one in Settings.";
+  if (status === 401 || status === 403) {
+    return "Bitly didn't accept your token. Remove it under Settings and paste a new one.";
+  }
   if (status === 429 && /MONTHLY_LIMIT|API_USAGE_LIMIT/.test(message)) {
     return "Your Bitly plan's monthly limit is used up. It resets on the 1st.";
   }

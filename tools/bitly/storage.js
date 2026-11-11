@@ -1,6 +1,4 @@
-const KEY = 'ew-bitly:token';
-
-export default function createTokenStore(storage) {
+export default function createTokenStore(storage, key = 'ew-bitly:token') {
   let memory = '';
   let persistent = true;
   const safe = (fn) => {
@@ -11,21 +9,21 @@ export default function createTokenStore(storage) {
       return null;
     }
   };
-  memory = safe(() => storage.getItem(KEY)) || '';
+  memory = safe(() => storage.getItem(key)) || '';
 
   return {
     get: () => memory,
     set(token) {
       memory = String(token ?? '').trim();
       if (!memory) {
-        safe(() => storage.removeItem(KEY));
+        safe(() => storage.removeItem(key));
         return;
       }
-      safe(() => storage.setItem(KEY, memory));
+      safe(() => storage.setItem(key, memory));
     },
     clear() {
       memory = '';
-      safe(() => storage.removeItem(KEY));
+      safe(() => storage.removeItem(key));
     },
     get persistent() { return persistent; },
   };
