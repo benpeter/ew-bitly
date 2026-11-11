@@ -1,59 +1,12 @@
-export const DEFAULT_CAMPAIGNS = [
-  { label: 'Print / QR code', source: 'qr', medium: 'print' },
+export const CAMPAIGNS = [
+  { label: 'Table card', source: 'table-card', medium: 'print' },
   { label: 'Flyer', source: 'flyer', medium: 'print' },
   { label: 'Instagram', source: 'instagram', medium: 'social' },
   { label: 'Newsletter', source: 'newsletter', medium: 'email' },
 ];
 
-function parseCampaigns(value) {
-  return value.split('|').map((entry) => {
-    const [label, rest = ''] = entry.split('=').map((s) => s.trim());
-    const [source, medium] = rest.split('/').map((s) => s?.trim());
-    return label && source && medium ? { label, source, medium } : null;
-  }).filter(Boolean);
-}
-
-function toHost(value) {
-  return value.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
-}
-
-export function readSettings(config) {
-  const settings = {
-    host: '', group: '', domain: 'bit.ly', campaigns: DEFAULT_CAMPAIGNS,
-  };
-  const rows = config?.bitly?.data;
-  if (!Array.isArray(rows)) return settings;
-  rows.forEach(({ key, value }) => {
-    const v = String(value ?? '').trim();
-    if (!v) return;
-    if (key === 'host') settings.host = toHost(v);
-    if (key === 'group') settings.group = v;
-    if (key === 'domain') settings.domain = toHost(v);
-    if (key === 'campaigns') {
-      const campaigns = parseCampaigns(v);
-      if (campaigns.length) settings.campaigns = campaigns;
-    }
-  });
-  return settings;
-}
-
-export function pageUrl({ context, settings }) {
-  const { org } = context;
-  const site = context.site || context.repo;
-  if (!org || !site) return null;
-  let path = `/${(context.path || '').replace(/^\/+/, '')}`.replace(/\.html$/, '');
-  path = path.replace(/(^|\/)index$/, '$1');
-  const host = settings.host || `main--${site}--${org}.aem.live`;
-  return { url: `https://${host}${path}`, host, hostSource: settings.host ? 'config' : 'default' };
-}
-
-export function withCampaign(url, campaign) {
-  if (!campaign) return url;
-  const u = new URL(url);
-  u.searchParams.set('utm_source', campaign.source);
-  u.searchParams.set('utm_medium', campaign.medium);
-  return u.href;
-}
+const HOST = /^(?:https:\/\/)?([a-z0-9-]+(?:\.[a-z0-9-]+)+)\/?$/i;
+const PREVIEW_HOST = /\.(aem|hlx)\.page$/i;
 
 function parse(url) {
   try {
@@ -63,30 +16,73 @@ function parse(url) {
   }
 }
 
-const trimPath = (path) => path.replace(/\/+$/, '') || '/';
+export function hostOrigin(host) {
+  const match = typeof host === 'string' && host.match(HOST);
+  if (!match || PREVIEW_HOST.test(match[1])) return null;
+  return `https://${match[1].toLowerCase()}`;
+}
+
+export function pageUrl(origin, path) {
+  const page = `/${path.replace(/^\/+/, '')}`.replace(/\.html$/, '');
+  return `${origin}${page.replace(/(^|\/)index$/, '$1')}`;
+}
+
+export const isDraft = (path) => path.startsWith('/drafts/');
+
+export function withCampaign(url, campaign) {
+  if (!campaign) return url;
+  const u = new URL(url);
+  u.searchParams.set('utm_source', campaign.source);
+  u.searchParams.set('utm_medium', campaign.medium);
+  return u.href;
+}
 
 export function isSamePage(longUrl, page) {
   const a = parse(longUrl);
   const b = parse(page);
-  if (!a || !b) return false;
-  return a.hostname.toLowerCase() === b.hostname.toLowerCase()
-    && trimPath(a.pathname) === trimPath(b.pathname);
+  return !!a && !!b && a.hostname === b.hostname && a.pathname === b.pathname;
 }
 
-export function campaignOf(longUrl, campaigns) {
+export const findExisting = (links, longUrl) => links.find((l) => l.long_url === longUrl);
+
+export function campaignOf(longUrl) {
   const params = parse(longUrl)?.searchParams;
   if (!params) return '';
   const source = params.get('utm_source');
-  const medium = params.get('utm_medium');
-  const known = campaigns.find((c) => c.source === source && c.medium === medium);
+  const known = CAMPAIGNS.find((c) => c.source === source && c.medium === params.get('utm_medium'));
   return known?.label || source || '';
+}
+
+export function safeHref(link) {
+  return parse(link)?.protocol === 'https:' ? link : null;
+}
+
+export function qrFileName(link) {
+  const name = link.replace(/^https?:\/\//, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `qr-${name}.png`;
+}
+
+export function mediaPath(path, fileName) {
+  let clean = path.replace(/^\/+/, '').replace(/\.html$/, '');
+  if (!clean || clean.endsWith('/')) clean += 'index';
+  const parts = clean.split('/');
+  const page = parts.pop();
+  return `/${[...parts, `.${page}`, fileName].join('/')}`;
+}
+
+const escape = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+export const imageHtml = ({ src, alt }) => `<p><img src="${escape(src)}" alt="${escape(alt)}"></p>`;
+
+export function linkHtml(link) {
+  return `<p><a href="${escape(link)}">${escape(link.replace(/^https:\/\//, ''))}</a></p>`;
 }
 
 export function errorMessage({ status, body }) {
   const message = body?.message || '';
   if (status === 0) return "Bitly didn't answer. Check your connection and try again.";
   if (status === 401 || status === 403) return "Bitly didn't accept your token. Paste a new one in Settings.";
-  if (status === 429 && message === 'MONTHLY_LIMIT_EXCEEDED') {
+  if (status === 429 && /MONTHLY_LIMIT|API_USAGE_LIMIT/.test(message)) {
     return "Your Bitly plan's monthly limit is used up. It resets on the 1st.";
   }
   if (status === 429) return 'Too many requests to Bitly. Wait a minute and try again.';

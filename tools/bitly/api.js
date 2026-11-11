@@ -19,7 +19,11 @@ export function createBitly({
     let resp;
     try {
       resp = await fetch(`${BASE}${path}`, {
-        method, headers, body: body && JSON.stringify(body), signal: controller.signal,
+        method,
+        headers,
+        body: body && JSON.stringify(body),
+        credentials: 'omit',
+        signal: controller.signal,
       });
     } catch {
       throw new BitlyError(0, null);
@@ -33,7 +37,7 @@ export function createBitly({
       // keep null
     }
     if (!resp.ok) throw new BitlyError(resp.status, json);
-    return json ?? {};
+    return { ...json, status: resp.status };
   }
 
   async function clicks(id) {
@@ -52,14 +56,17 @@ export function createBitly({
       const query = new URLSearchParams({ hostname_path_query: hostPath, size: '50' });
       return (await call(`/groups/${encodeURIComponent(group)}/bitlinks?${query}`)).links ?? [];
     },
-    createLink: ({
+    createLink: async ({
       longUrl, group, domain, title,
-    }) => call('/bitlinks', {
-      method: 'POST',
-      body: {
-        long_url: longUrl, group_guid: group, domain, title,
-      },
-    }),
+    }) => {
+      const { status, ...link } = await call('/bitlinks', {
+        method: 'POST',
+        body: {
+          long_url: longUrl, group_guid: group, domain, title,
+        },
+      });
+      return { ...link, existed: status === 200 };
+    },
     clicks,
     clicksFor: async (ids, limit = 3) => {
       const result = new Map();
