@@ -152,6 +152,8 @@ describe('errorMessage', () => {
   it('maps common cases to plain words', () => {
     assert.match(errorMessage({ status: 0 }), /didn't answer/);
     assert.match(errorMessage({ status: 401 }), /token/);
+    assert.doesNotMatch(errorMessage({ status: 401 }), /Settings/);
+    assert.match(errorMessage({ status: 401 }), /Remove Bitly token/);
     assert.match(errorMessage({ status: 403, body: { message: 'FORBIDDEN' } }), /token/);
     assert.match(errorMessage({ status: 429, body: { message: 'MONTHLY_LIMIT_EXCEEDED' } }), /monthly limit/);
     assert.match(errorMessage({ status: 429, body: { message: 'API_USAGE_LIMIT_EXCEEDED' } }), /monthly limit/);
