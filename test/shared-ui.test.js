@@ -5,7 +5,7 @@ import loadSharedUi from '../tools/bitly/shared-ui.js';
 const flush = () => new Promise((resolve) => { setImmediate(resolve); });
 
 describe('loadSharedUi', () => {
-  it('sets the nx config before it loads the menu, popover and toast', async () => {
+  it('points codeBase at the plugin, then loads the menu, popover, toast and picker', async () => {
     const steps = [];
     const showToast = () => {};
     const load = async (href) => {
@@ -23,9 +23,12 @@ describe('loadSharedUi', () => {
     };
     const ui = await loadSharedUi(load);
     assert.equal(steps[0], 'import scripts/nx.js');
-    assert.equal(steps[1], 'setConfig {}');
+    // nx-picker draws its chevron from codeBase/img/icons; SVG <use> needs the plugin's own origin.
+    const codeBase = new URL('../tools/bitly', import.meta.url).href;
+    assert.equal(steps[1], `setConfig ${JSON.stringify({ codeBase })}`);
     assert.deepEqual(steps.slice(2).sort(), [
       'import blocks/shared/menu/menu.js',
+      'import blocks/shared/picker/picker.js',
       'import blocks/shared/popover/popover.js',
       'import blocks/shared/toast/toast.js',
     ]);
