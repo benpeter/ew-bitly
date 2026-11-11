@@ -1,19 +1,18 @@
-:root {
-  color-scheme: light dark;
-}
+/* Colors are DA's S2 tokens from nx2/styles/styles.css. DA's styles are light only. */
 
 /* DA's styles set the font only on DA pages; the toast is added outside .bitly. */
 body {
   margin: 0;
-  background-color: light-dark(#fff, #111);
+  background-color: var(--s2-gray-25, #fff);
   font-family: 'Adobe Clean', adobe-clean, 'Source Sans Pro', sans-serif;
 }
 
 .bitly {
+  display: block;
   padding: 12px 16px;
   font-size: 14px;
   line-height: 1.4;
-  color: light-dark(#222, #eee);
+  color: var(--s2-gray-800, #292929);
   overflow-wrap: anywhere;
 }
 
@@ -31,9 +30,10 @@ body {
   margin: 0 0 8px;
 }
 
-.bitly section {
+.bitly section,
+.bitly form {
   padding: 12px 0;
-  border-top: 1px solid light-dark(#d0d0d0, #444);
+  border-top: 1px solid var(--s2-gray-300, #dadada);
 }
 
 .bitly section:first-child {
@@ -42,84 +42,7 @@ body {
 }
 
 .bitly a {
-  color: light-dark(#0265dc, #78bbfa);
-}
-
-
-.bitly .bl-links {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.bitly .bl-link {
-  padding: 8px 0;
-  border-top: 1px solid light-dark(#e6e6e6, #333);
-}
-
-.bitly .bl-link:first-child {
-  border-top: 0;
-}
-
-.bitly .bl-link-main {
-  display: grid;
-  gap: 2px;
-}
-
-.bitly .bl-meta,
-.bitly .bl-empty {
-  color: light-dark(#5c5c5c, #b0b0b0);
-  font-size: 13px;
-}
-
-.bitly .bl-link-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 6px 0;
-}
-
-.bitly .bl-qr {
-  margin: 8px 0 0;
-  padding: 8px;
-  border-radius: 8px;
-  background: light-dark(#f5f5f5, #1d1d1d);
-}
-
-.bitly .bl-code {
-  display: inline-block;
-  margin: 0 0 8px;
-  padding: 8px;
-  background: #fff;
-}
-
-.bitly .bl-drag {
-  cursor: grab;
-}
-
-.bitly .bl-code img {
-  display: block;
-}
-
-.bitly .bl-warn {
-  padding: 6px 8px;
-  border-left: 3px solid #e68619;
-  background: light-dark(#fff4e5, #2b2112);
-}
-
-.bitly .bl-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.bitly .bl-status:empty {
-  margin: 0;
-}
-
-/* Shared DA button classes set display, which would override the hidden attribute. */
-.bitly [hidden] {
-  display: none !important;
+  color: var(--s2-blue-900, #3b63fb);
 }
 
 .bitly .bl-title {
@@ -147,12 +70,84 @@ body {
 }
 
 .bitly .nx-input {
-  box-sizing: border-box;
   width: 100%;
 }
 
 .bitly .bl-check {
   margin: 0 0 8px;
+}
+
+.bitly .bl-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bitly .bl-link {
+  padding: 8px 0;
+  border-top: 1px solid var(--s2-gray-200, #e1e1e1);
+}
+
+.bitly .bl-link:first-child {
+  border-top: 0;
+}
+
+.bitly .bl-link-main {
+  display: grid;
+  gap: 2px;
+}
+
+.bitly .bl-meta,
+.bitly .bl-empty,
+.bitly .bl-note {
+  color: var(--s2-gray-700, #505050);
+  font-size: 13px;
+}
+
+.bitly .bl-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.bitly .bl-qr {
+  margin: 8px 0 0;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--s2-gray-75, #f3f3f3);
+}
+
+.bitly .bl-code {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 8px;
+  background: #fff;
+}
+
+.bitly .bl-drag {
+  cursor: grab;
+}
+
+.bitly .bl-code img {
+  display: block;
+}
+
+/* DA has no inline alert; a toast would disappear. */
+.bitly .bl-warn {
+  padding: 6px 8px;
+  border-left: 3px solid var(--s2-orange-700, #e86a00);
+  background: var(--s2-orange-100, #fff6e7);
+}
+
+.bitly .bl-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bitly .bl-status:empty {
+  margin: 0;
 }
 
 .bitly .bl-help-popover {
@@ -168,11 +163,11 @@ body {
 .bitly .bl-inline-help {
   flex-basis: 100%;
   margin: 0;
-  color: light-dark(#5c5c5c, #b0b0b0);
+  color: var(--s2-gray-700, #505050);
   font-size: 13px;
 }
 
-nx-popover:not(:defined),
-nx-menu:not(:defined) {
+.bitly nx-popover:not(:defined),
+.bitly nx-menu:not(:defined) {
   display: none;
 }
