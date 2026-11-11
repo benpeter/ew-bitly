@@ -1,6 +1,6 @@
 {
   "Title": "Short links",
-  "Description": "Short links and print-ready QR codes for the page you're editing, with a campaign for each use (table card, flyer, Instagram, newsletter). Authors see clicks of the last 30 days and drop the QR code into the page. Uses each author's own Bitly account.",
+  "Description": "Short links and share-ready QR codes for the page you're editing, with a campaign for each use (table card, flyer, Instagram, newsletter). Authors see clicks of the last 30 days and drop the QR code into the page. Uses each author's own Bitly account.",
   "Category": "Extension",
   "Doc Url": "https://github.com/benpeter/ew-bitly#readme",
   "Try Url": "",

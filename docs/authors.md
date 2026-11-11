@@ -5,7 +5,9 @@ Use them for print and social: a QR code on a table card, a flyer or a poster, a
 short link in an Instagram bio or a newsletter. Each link can carry a campaign, so
 your analytics can tell the table card from the flyer.
 
-The links come from your own [Bitly](https://bitly.com) account.
+The links come from your own [Bitly](https://bitly.com) account. Use a paid Bitly
+plan: on the free plan, Bitly shows visitors an ad page with an 8-second countdown
+before every link and every QR code scan.
 
 ## Open the panel
 

@@ -9,7 +9,7 @@ straight into the page.
 The links come from [Bitly](https://bitly.com). Each author connects their own Bitly
 account. This plugin is not made or endorsed by Bitly.
 
-![The Short links panel next to a page in Workspace](docs/img/workspace.png)
+![The Short links panel in Workspace, showing the QR code of a short link](docs/img/workspace-qr.png)
 
 This README is for site admins who want to add the plugin to a site. For how to use
 it, see the [author guide](docs/authors.md).
@@ -23,11 +23,17 @@ it, see the [author guide](docs/authors.md).
 - **The classic DA setup.** The plugin also handles sites on the new AEM API
   (Helix 6), but it is only tested on classic DA sites.
 - **A Bitly account for each author.** Bitly's terms don't allow sharing access
-  credentials, so there is no site-wide account. Core ($10 a month, billed yearly)
-  has 100 links a month and 30 days of clicks. The free plan has 5 links a month, no
-  click counts, and Bitly calls it "Free With Ads"; we haven't checked whether scans
-  of free-plan links show an ad first, so use a paid plan for printed codes. See
+  credentials, so there is no site-wide account. Use a paid plan: Core ($10 a month,
+  billed yearly) has 100 links a month and 30 days of clicks. See
   [Bitly's pricing](https://bitly.com/pages/pricing).
+
+  The free plan ("Free With Ads") isn't fit for links your visitors use. Bitly
+  [shows an ad page](https://support.bitly.com/hc/en-us/articles/32874287800333-Why-are-there-ads-on-my-links)
+  before every link of a free account: a cookie consent dialog for Bitly's ad
+  partners, a preview of the destination and an ad, then a redirect after 8 seconds.
+  That page also appears when someone scans the QR code. Links of paid accounts go
+  straight to the page. The free plan also has only 5 links a month and no click
+  counts.
 - **Write access to the site** for authors who insert QR codes. The image is saved
   in the page's folder, like any image an author adds.
 
