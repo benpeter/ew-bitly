@@ -3,11 +3,14 @@ const WAIT = 3000;
 
 async function loadAll(load) {
   const { setConfig } = await load(`${NX}/scripts/nx.js`);
-  await setConfig({});
+  // nx-picker draws its chevron from codeBase/img/icons. SVG <use> only works on the same
+  // origin, so the icon ships with the plugin.
+  await setConfig({ codeBase: new URL('.', import.meta.url).href.replace(/\/$/, '') });
   const [, , toast] = await Promise.all([
     load(`${NX}/blocks/shared/menu/menu.js`),
     load(`${NX}/blocks/shared/popover/popover.js`),
     load(`${NX}/blocks/shared/toast/toast.js`),
+    load(`${NX}/blocks/shared/picker/picker.js`),
   ]);
   return { showToast: toast.showToast };
 }

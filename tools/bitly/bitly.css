@@ -10,20 +10,34 @@ body {
 .bitly {
   display: block;
   padding: 12px 16px;
-  font-size: 14px;
+  font-size: var(--s2-body-size-s, 14px);
   line-height: 1.4;
   color: var(--s2-gray-800, #292929);
   overflow-wrap: anywhere;
 }
 
-.bitly h1 {
-  margin: 0;
-  font-size: 18px;
-}
-
 .bitly h2 {
   margin: 0 0 8px;
-  font-size: 15px;
+  font-size: var(--s2-component-m-bold-font-size, 14px);
+}
+
+/* The panel tab already shows the name; the heading is for screen readers. */
+.bitly .bl-vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Native fallback for the campaign picker: form.css sets the font on inputs only. */
+.bitly select {
+  font: inherit;
+}
+
+.bitly nx-picker {
+  display: block;
 }
 
 .bitly p {
@@ -110,7 +124,7 @@ body {
 .bitly .bl-empty,
 .bitly .bl-note {
   color: var(--s2-gray-700, #505050);
-  font-size: 13px;
+  font-size: var(--s2-body-size-xs, 12px);
 }
 
 .bitly .bl-link-actions {
@@ -161,7 +175,7 @@ body {
 
 .bitly .bl-help-popover {
   max-width: min(300px, calc(100vw - 32px));
-  font-size: 12px;
+  font-size: var(--s2-body-size-xs, 12px);
 }
 
 .bitly .bl-help-popover p {
@@ -173,10 +187,11 @@ body {
   flex-basis: 100%;
   margin: 0;
   color: var(--s2-gray-700, #505050);
-  font-size: 13px;
+  font-size: var(--s2-body-size-xs, 12px);
 }
 
 .bitly nx-popover:not(:defined),
+.bitly nx-picker:not(:defined),
 .bitly nx-menu:not(:defined) {
   display: none;
 }

@@ -35,7 +35,7 @@ function el(tag, props = {}, ...children) {
   return node;
 }
 
-const QUIET = 'nx-action-btn-quiet nx-btn-sm';
+const QUIET = 'nx-action-btn-quiet';
 const button = (label, onclick, className = 'nx-action-btn nx-btn-sm', extra = {}) => el('button', {
   type: 'button', className, onclick, ...extra,
 }, label);
@@ -283,14 +283,35 @@ export default function mountPanel(root, {
       help(
         'adding the QR code',
         row(
-          button(state.inserting ? 'Inserting…' : 'Insert at cursor', insert, undefined, { id: 'bl-insert', disabled: state.inserting }),
-          button('Download SVG', () => download(new Blob([prepared.svg], { type: 'image/svg+xml' }), prepared.file.name.replace(/\.png$/, '.svg')), QUIET, { id: 'bl-svg' }),
-          button('Download PNG', () => download(prepared.png, prepared.file.name), QUIET, { id: 'bl-png' }),
+          button(state.inserting ? 'Inserting…' : 'Insert at cursor', insert, 'nx-form-btn-secondary', { id: 'bl-insert', disabled: state.inserting }),
+          downloadControl(prepared),
         ),
         `Insert at cursor works in the Content view of the editor.${canDrag ? ' You can also drag the code into the page.' : ''}`,
-        'The code opens the published page. Publish the page before you print it. SVG is best for print.',
+        'The code opens the published page. Publish the page before you share the code. SVG stays sharp at any size.',
       ),
     );
+  }
+
+  // One "Download" button with a menu keeps the QR actions on one line.
+  function downloadControl(prepared) {
+    const svg = () => download(new Blob([prepared.svg], { type: 'image/svg+xml' }), prepared.file.name.replace(/\.png$/, '.svg'));
+    const png = () => download(prepared.png, prepared.file.name);
+    if (!hasMenu) {
+      return [
+        button('Download SVG', svg, 'nx-form-btn-secondary', { id: 'bl-svg' }),
+        button('Download PNG', png, 'nx-form-btn-secondary', { id: 'bl-png' }),
+      ];
+    }
+    const trigger = el('button', {
+      type: 'button', slot: 'trigger', id: 'bl-download', className: 'nx-form-btn-secondary',
+    }, 'Download');
+    const control = el('nx-menu', { placement: 'below-start' }, trigger);
+    control.items = [
+      { id: 'svg', label: 'SVG', description: 'Scales to any size' },
+      { id: 'png', label: 'PNG', description: 'At least 1024 pixels wide' },
+    ];
+    control.addEventListener('select', (e) => (e.detail?.id === 'svg' ? svg : png)());
+    return control;
   }
 
   function linkRow(link) {
@@ -345,7 +366,7 @@ export default function mountPanel(root, {
       el('label', { className: 'nx-form-field' }, 'Bitly API token', input),
       !tokens.persistent && el('p', { className: 'bl-note' }, "This browser blocks storage, so you'll paste the token again next time."),
       row(
-        el('button', { type: 'submit', id: 'bl-save', className: 'nx-btn-primary nx-btn-sm' }, 'Connect'),
+        el('button', { type: 'submit', id: 'bl-save', className: 'nx-form-btn-primary' }, 'Connect'),
         el('a', { href: TOKEN_HELP, target: '_blank', rel: 'noopener noreferrer' }, 'Get a token in Bitly'),
       ),
     );
@@ -394,15 +415,20 @@ export default function mountPanel(root, {
     const header = el(
       'section',
       { className: 'bl-page' },
-      el('div', { className: 'bl-title' }, el('h1', {}, 'Short links'), tokenControl),
-      state.url && help(
-        'these links',
-        row(el('p', {}, 'Links open ', el('strong', {}, bare(state.url)))),
-        "Short links point to this page on the site's published domain. A campaign adds utm_source and utm_medium, so your analytics can tell a table card from a flyer.",
-        'Links and scans go through bit.ly, under your Bitly account.',
+      el('h1', { className: 'bl-vh' }, 'Short links'),
+      el(
+        'div',
+        { className: 'bl-title' },
+        state.url ? help(
+          'these links',
+          row(el('p', {}, 'Links open ', el('strong', {}, bare(state.url)))),
+          "Short links point to this page on the site's published domain. A campaign adds utm_source and utm_medium, so your analytics can tell a table card from a flyer.",
+          'Links and scans go through bit.ly, under your Bitly account.',
+        ) : el('span'),
+        tokenControl,
       ),
       state.problem && el('p', { className: 'bl-warn' }, state.problem, ' ', button('Retry', start, QUIET, { id: 'bl-retry-host' })),
-      state.url && isDraft(path) && el('p', { className: 'bl-warn' }, "Draft pages aren't public. A printed code would open an error page."),
+      state.url && isDraft(path) && el('p', { className: 'bl-warn' }, "Draft pages aren't public. A shared code would open an error page."),
       status,
     );
     if (path === '/') {
@@ -413,14 +439,22 @@ export default function mountPanel(root, {
       main.replaceChildren(header, tokenCard());
       return;
     }
-    // A native select, styled as DA's input: nx-picker can't take a field label yet.
-    const campaign = el(
-      'select',
-      { id: 'bl-campaign', className: 'nx-input', onchange: (e) => { state.campaign = e.target.value; } },
-      el('option', { value: '' }, 'No campaign'),
-      CAMPAIGNS.map((c, i) => el('option', { value: String(i) }, c.label)),
-    );
-    campaign.value = state.campaign;
+    const options = [{ value: '', label: 'No campaign' }, ...CAMPAIGNS.map((c, i) => ({ value: String(i), label: c.label }))];
+    let campaign;
+    if (customElements.get('nx-picker')) {
+      // nx-picker has no label of its own; the group carries the visible label's text.
+      campaign = el('nx-picker', { id: 'bl-campaign', variant: 'field', size: 'm' });
+      campaign.items = options;
+      campaign.value = state.campaign;
+      campaign.addEventListener('change', (e) => { state.campaign = e.detail.value; });
+    } else {
+      campaign = el(
+        'select',
+        { id: 'bl-campaign', className: 'nx-input', onchange: (e) => { state.campaign = e.target.value; } },
+        options.map((o) => el('option', { value: o.value }, o.label)),
+      );
+      campaign.value = state.campaign;
+    }
     let list = state.url ? el('p', { className: 'bl-empty' }, 'No short links for this page yet.') : null;
     if (state.listFailed) list = el('p', { className: 'bl-warn' }, "Couldn't load your links. ", button('Retry', start, QUIET, { id: 'bl-retry-list' }));
     else if (state.links.length) list = el('ul', { className: 'bl-links' }, state.links.map(linkRow));
@@ -435,8 +469,8 @@ export default function mountPanel(root, {
           'If this page already has a link for the campaign, you get that link instead of a new one.',
           'Each new link counts toward your Bitly plan\'s monthly links.',
         ),
-        el('label', { className: 'nx-form-field' }, 'Campaign', campaign),
-        button(state.creating ? 'Creating…' : 'Create short link', create, 'nx-btn-primary nx-btn-sm', {
+        el('div', { className: 'nx-form-field', role: 'group', 'aria-labelledby': 'bl-campaign-label' }, el('span', { id: 'bl-campaign-label' }, 'Campaign'), campaign),
+        button(state.creating ? 'Creating…' : 'Create short link', create, 'nx-form-btn-primary', {
           id: 'bl-create', disabled: !state.url || state.listFailed || state.creating,
         }),
       ),
