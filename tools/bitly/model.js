@@ -72,7 +72,8 @@ export function mediaPath(path, fileName) {
 
 const escape = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-export const imageHtml = ({ src, alt }) => `<p><img src="${escape(src)}" alt="${escape(alt)}"></p>`;
+// No alt: sites handle alt text differently, so authors add it in the editor.
+export const imageHtml = (src) => `<p><img src="${escape(src)}"></p>`;
 
 export const bare = (url) => url.replace(/^https:\/\//, '');
 

@@ -1,4 +1,4 @@
-# Short links and QR codes for Experience Workspace
+# bit.ly for Experience Workspace
 
 A library plugin for [Adobe Experience Workspace](https://da.live) (DA) that makes
 [Bitly](https://bitly.com) short links and QR codes for the page you are editing.
@@ -16,7 +16,7 @@ from the flyer. The panel shows how often each link was clicked in the last 30 d
   exists already, Bitly returns it and no new one is made.
 - Copy a link.
 - Show a QR code for a link, then:
-  - insert it at the cursor, as an image with alt text and, optionally, the link below it,
+  - insert it at the cursor, as an image and, optionally, the link below it,
   - drag it into the page,
   - download it as SVG (for print) or PNG.
 
@@ -41,7 +41,7 @@ Add a row to the `library` sheet of the site config (`https://da.live/config#/{o
 
 | title | path | icon |
 |---|---|---|
-| Short links and QR codes | `https://main--ew-bitly--benpeter.preview.da.live/tools/bitly/bitly.html` | `https://main--ew-bitly--benpeter.preview.da.live/tools/bitly/icon.svg` |
+| bit.ly | `https://main--ew-bitly--benpeter.preview.da.live/tools/bitly/bitly.html` | `https://main--ew-bitly--benpeter.preview.da.live/tools/bitly/icon.svg` |
 
 Leave `experience` empty: the plugin runs in the side panel (`inline`).
 
@@ -56,6 +56,7 @@ doesn't create links.
 - Publish the page before you print the code.
 - Sites on the new AEM API (Helix 6) are detected, but this version is tested on DA
   sites with the classic setup only.
+- The inserted or dropped QR image has no alt text. Add it in the editor, the way your site handles alt text.
 
 ## Develop
 

@@ -2,6 +2,7 @@
 import { createBitly } from './api.js';
 import createSite from './site.js';
 import createTokenStore from './storage.js';
+import keepPointerCapture from './capture.js';
 import {
   CAMPAIGNS, hostOrigin, pageUrl, isDraft, withCampaign, isSamePage, findExisting, campaignOf,
   safeHref, qrFileName, mediaPath, imageHtml, linkHtml, errorMessage, bare,
@@ -104,7 +105,7 @@ export default function mountPanel(root, {
     const href = safeHref(link.link);
     if (!href) return;
     state.selected = {
-      id: link.id, link: href, alt: `QR code: ${bare(state.url)}`, withLink: true, prepared: null,
+      id: link.id, link: href, withLink: true, prepared: null,
     };
     render();
     try {
@@ -130,7 +131,7 @@ export default function mountPanel(root, {
     say('Uploading the QR code…');
     try {
       const src = await site.upload(mediaPath(path, sel.prepared.file.name), sel.prepared.file);
-      actions.sendHTML(imageHtml({ src, alt: sel.alt.trim() }) + (sel.withLink ? linkHtml(sel.link) : ''));
+      actions.sendHTML(imageHtml(src) + (sel.withLink ? linkHtml(sel.link) : ''));
       say('Sent to the page at the cursor.');
     } catch {
       say("Couldn't upload the QR code. Try again, or drag it into the page.");
@@ -185,10 +186,10 @@ export default function mountPanel(root, {
       stopDrag();
       const { id } = drag;
       actions.makeDraggable({
-        element: handle,
+        element: keepPointerCapture(handle),
         getData: () => ({ files: [prepared.file] }),
         onResult: ({ ok, error }) => {
-          if (ok) say('Added to the page. Add alt text to the image in the editor.');
+          if (ok) say('Added to the page.');
           else if (error !== 'cancelled') say("Couldn't add the QR code to the page.");
         },
       }).then((dispose) => {
@@ -200,9 +201,6 @@ export default function mountPanel(root, {
       'div',
       { className: 'bl-qr' },
       handle,
-      el('div', { className: 'bl-field' }, el('label', { htmlFor: 'bl-alt' }, 'Alt text'), el('input', {
-        type: 'text', id: 'bl-alt', value: sel.alt, oninput: (e) => { sel.alt = e.target.value; },
-      })),
       el(
         'div',
         { className: 'bl-check' },
