@@ -9,7 +9,7 @@ straight into the page.
 The links come from [Bitly](https://bitly.com). Each author connects their own Bitly
 account. This plugin is not made or endorsed by Bitly.
 
-![The Short links panel in Workspace, showing the QR code of a short link](docs/img/workspace-qr.png)
+![The Short links panel in Workspace, showing the QR code of a short link](docs/img/panel-with-qr-code.png)
 
 This README is for site admins who want to add the plugin to a site. For how to use
 it, see the [author guide](docs/authors.md).
