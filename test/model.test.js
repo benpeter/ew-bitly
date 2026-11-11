@@ -139,10 +139,10 @@ describe('mediaPath', () => {
 });
 
 describe('imageHtml and linkHtml', () => {
-  it('builds escaped markup', () => {
+  it('builds escaped markup and leaves alt text to the editor', () => {
     assert.equal(
-      imageHtml({ src: 'https://content.da.live/o/s/.p/qr.png', alt: 'QR code: "Menü" <b>' }),
-      '<p><img src="https://content.da.live/o/s/.p/qr.png" alt="QR code: &quot;Menü&quot; &lt;b&gt;"></p>',
+      imageHtml('https://content.da.live/o/s/.p/qr "1".png'),
+      '<p><img src="https://content.da.live/o/s/.p/qr &quot;1&quot;.png"></p>',
     );
     assert.equal(linkHtml('https://bit.ly/abc'), '<p><a href="https://bit.ly/abc">bit.ly/abc</a></p>');
   });
