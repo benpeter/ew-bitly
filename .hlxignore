@@ -5,3 +5,4 @@ package.json
 package-lock.json
 test/*
 marketplace/*.json
+marketplace/*.html

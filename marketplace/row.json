@@ -1,0 +1,13 @@
+{
+  "Title": "Short links and QR codes",
+  "Description": "Make Bitly short links and print-ready QR codes for the page you're editing, with a campaign for each use (table card, flyer, Instagram, newsletter). See the clicks of the last 30 days and drop the QR code into the page. Each author connects their own Bitly account.",
+  "Category": "Extension",
+  "Doc Url": "https://github.com/benpeter/ew-bitly#readme",
+  "Try Url": "",
+  "Status": "Early Access",
+  "Owner": "Ben Peter",
+  "Type": "Plugin",
+  "Logo": "https://main--ew-bitly--benpeter.aem.page/tools/bitly/icon.svg",
+  "Image": "https://main--ew-bitly--benpeter.aem.page/marketplace/card.png",
+  "Date": "2026-11-11"
+}

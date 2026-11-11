@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
-    "test": "node --test \"test/**/*.test.js\"",
+    "test": "node --test --test-timeout=5000 \"test/**/*.test.js\"",
     "lint:js": "eslint .",
     "lint:css": "stylelint \"tools/**/*.css\"",
     "lint": "npm run lint:js && npm run lint:css"
