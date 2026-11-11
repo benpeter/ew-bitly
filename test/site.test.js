@@ -1,6 +1,6 @@
 import { it, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import createSite from '../tools/bitly/upload.js';
+import createSite from '../tools/bitly/site.js';
 
 const response = (status, body, headers = {}) => ({
   ok: status >= 200 && status < 300,
@@ -76,6 +76,22 @@ describe('createSite', () => {
     await site.host();
     await site.upload('/.p/qr.png', new Blob(['x']));
     assert.equal(f.calls.fetch.length, 1);
+  });
+
+  it('gives up on a backend check that hangs', async () => {
+    const hanging = (url, opts) => new Promise((resolve, reject) => {
+      opts.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+    });
+    const f = fakes();
+    await assert.rejects(createSite({
+      org: 'o', site: 's', ...f, fetch: hanging, timeout: 10,
+    }).host());
+  });
+
+  it('passes a signal to daFetch', async () => {
+    const f = fakes();
+    await createSite({ org: 'o', site: 's', ...f }).host();
+    assert.ok(f.calls.daFetch[0].opts.signal);
   });
 
   it('fails on a failed upload', async () => {

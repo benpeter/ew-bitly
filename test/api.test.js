@@ -82,12 +82,12 @@ describe('createBitly', () => {
     assert.equal(url.searchParams.get('units'), '30');
   });
 
-  it('returns null clicks when the plan has no numbers', async () => {
-    const results = await Promise.all([402, 403].map((status) => {
+  it('returns null clicks on any error', async () => {
+    const results = await Promise.all([402, 403, 500].map((status) => {
       const fetch = fakeFetch(() => ({ status, body: { message: 'UPGRADE_REQUIRED' } }));
       return createBitly({ token: 'T', fetch }).clicks('bit.ly/a');
     }));
-    assert.deepEqual(results, [null, null]);
+    assert.deepEqual(results, [null, null, null]);
   });
 
   it('reads clicks for many links, at most 3 at a time', async () => {
@@ -129,5 +129,16 @@ describe('createBitly', () => {
       opts.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
     });
     await assert.rejects(createBitly({ token: 'T', fetch: hanging, timeout: 10 }).defaultGroup(), (e) => e.status === 0);
+  });
+
+  it('times out a body that never ends', async () => {
+    const slowBody = async (url, opts) => ({
+      ok: true,
+      status: 200,
+      text: () => new Promise((resolve, reject) => {
+        opts.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+      }),
+    });
+    await assert.rejects(createBitly({ token: 'T', fetch: slowBody, timeout: 10 }).defaultGroup(), (e) => e.status === 0);
   });
 });
