@@ -135,15 +135,10 @@ with path `/tools/bitly/bitly.html` and ref `local`, run `aem up`, and open Work
 with `?ref=local`. Workspace loads paths that start with `/` from
 `http://localhost:3000` for `local` rows.
 
-`marketplace/card.png` (1200x720) is made from `marketplace/card.html`:
-
-```sh
-python3 -m http.server 6789 &
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
-  --hide-scrollbars --force-device-scale-factor=1 --window-size=1200,720 \
-  --virtual-time-budget=3000 --screenshot=marketplace/card.png \
-  http://127.0.0.1:6789/marketplace/card.html
-```
+`marketplace/card.png` (1200x896, the size of the other marketplace images) is an
+illustration made with Adobe Firefly (Gemini 3.1 model, 4:3, 2K). The prompt is in
+`marketplace/card-prompt.txt`. The generated image has white rounded corners; crop
+about 5% from each side before scaling it to 1200x896.
 
 ## Licenses
 

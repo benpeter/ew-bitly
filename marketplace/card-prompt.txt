@@ -1,0 +1,13 @@
+Create a simple, clean flat-vector illustration for a software app marketplace thumbnail, 4:3 landscape aspect ratio.
+
+Subject: one web page turning into a short link and a scannable code. On the left, a single web page card with a headline placeholder bar, an image placeholder and two short text lines. On the right, a large square QR-code-style tile made of simple rounded blocks, with the three typical corner squares, as an abstract pattern rather than a real, scannable code. Below the tile, one short rounded pill shape with a small chain-link symbol on its left end and a plain placeholder bar, standing for a short link. A single soft arrow connects the page card to the tile and pill. That is all: only two groups of elements, nothing else.
+
+Composition: minimal and calm, one clear central concept with a focal point slightly above center, lots of empty space around the elements. The QR-code-style tile is the hero element. Keep all elements well away from the edges so nothing is lost when cropped by rounded card corners.
+
+Style: modern, clean flat design with no isometric perspective. Very few simple geometric shapes, rounded corners, no outlines, soft subtle gradients, gentle drop shadows for depth. Looks like a polished, uncluttered enterprise SaaS illustration.
+
+Color: muted pastel tones combined with deeper, rich-but-not-dark tones. Dominant hue is purple, with soft coral and teal as supporting accents; the QR-code-style blocks are deep purple on a light tile. Background is a soft pastel purple tint with a subtle gradient, no pure white and no near-black.
+
+Text: no text at all. No letters, no words, no numbers, no captions, no URLs. All text areas are represented by plain bars and shapes. No logos of any kind, no real brand marks, no watermarks.
+
+Avoid: any text or lettering, photorealism, people or faces, hands, phones, stock-photo look, heavy 3D, neon colors, dark or black backgrounds, clutter, busy patterns, gears, clouds, multiple arrows, small badges, extra icons, barcodes, real company or product logos, recognizable brand icons.
